@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils.ts";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { useAtom } from "jotai";
-import { motorConnectedAtom } from "@/stores/motor.ts";
+import { useAtom, useSetAtom } from "jotai";
+import { motorConfigAtom, motorConnectedAtom } from "@/stores/motor.ts";
 import {
   Select,
   SelectContent,
@@ -14,23 +14,41 @@ import {
 } from "@/components/ui/select.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Plug, Unplug } from "lucide-react";
+import { MotorConfig } from "@/motor.ts";
+import { Spinner } from "@/components/ui/spinner.tsx";
+import { toast } from "sonner";
+
+export async function disconnect() {
+  try {
+    await invoke("disconnect_motor");
+  } catch (e) {
+    console.error(e);
+  }
+}
 
 export default function Device({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   const [connected, setConnected] = useAtom(motorConnectedAtom);
+  const [connecting, setConnecting] = useState<boolean>(false);
   const [portList, setPortList] = useState<string[]>([]);
+  const setMotorConfig = useSetAtom(motorConfigAtom);
 
   const [selected, setSelected] = useState<string>("");
 
-  const disconnect = useCallback(async () => {
+  const getConfigOrDisconnect = useCallback(async () => {
     try {
-      await invoke("disconnect_motor");
+      const r: MotorConfig = await invoke("get_motor_config");
+      setMotorConfig(r);
+      setConnected(true);
     } catch (e) {
-      console.error(e);
+      console.log(e);
+      toast.error(`get config failed!\n${e}`);
+      // 获取配置失败，不是我们的设备，关闭连接
+      await disconnect();
     }
-  }, []);
+  }, [setConnected, setMotorConfig]);
 
   useEffect(() => {
     const md = listen("motor-disconnected", () => {
@@ -49,7 +67,7 @@ export default function Device({
       md.then((unlisten) => unlisten());
       spc.then((unlisten) => unlisten());
     };
-  }, [disconnect, setConnected, setPortList]);
+  }, [setConnected, setPortList]);
 
   useEffect(() => {
     if (selected && !portList.includes(selected)) {
@@ -57,14 +75,32 @@ export default function Device({
     }
   }, [portList, selected, setSelected]);
 
+  const effectOnceRef = useRef(false);
+  useEffect(() => {
+    // 本函数作用是前端重新加载后进行一次数据交互
+    if (effectOnceRef.current) return;
+    effectOnceRef.current = true;
+    invoke("get_motor_port").then((port) => {
+      setSelected(port as string);
+      setConnecting(true);
+      getConfigOrDisconnect().then(() => {
+        setConnecting(false);
+        setConnected(true);
+      });
+    });
+  }, [getConfigOrDisconnect, setConnected]);
+
   const connect = useCallback(async () => {
+    setConnecting(true);
     try {
       await invoke("connect_motor", { portName: selected, baudRate: 115200 });
-      setConnected(true);
+      await getConfigOrDisconnect();
     } catch (e) {
       console.error(e);
+      toast.error(`connect error!\n${e}`);
     }
-  }, [selected, setConnected]);
+    setConnecting(false);
+  }, [getConfigOrDisconnect, selected]);
   return (
     <div
       className={cn(
@@ -88,9 +124,9 @@ export default function Device({
           variant="outline"
           size="icon"
           onClick={() => connect()}
-          disabled={!selected}
+          disabled={!selected || connecting}
         >
-          <Plug />
+          {connecting ? <Spinner /> : <Plug />}
         </Button>
       )}
       <div className="flex-1">
@@ -98,7 +134,7 @@ export default function Device({
           <Select
             value={selected}
             onValueChange={setSelected}
-            disabled={connected}
+            disabled={connected || connecting}
           >
             <SelectTrigger className="w-full border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none">
               <SelectValue placeholder="Select a port" />
