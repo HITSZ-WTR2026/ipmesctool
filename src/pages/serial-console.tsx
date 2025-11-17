@@ -1,15 +1,7 @@
 import { useEffect, useRef } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { Button } from "@/components/ui/button.tsx";
-import { atom, useAtom } from "jotai";
-
-interface SerialData {
-  type: "rx" | "tx";
-  data: string;
-  timestamp: number;
-}
-
-const serialDataAtom = atom<SerialData[]>([]);
+import { useAtom } from "jotai";
+import { serialDataAtom } from "@/stores/serial.ts";
 
 export default function SerialConsole() {
   const [serialData, setSerialData] = useAtom(serialDataAtom);
@@ -22,28 +14,6 @@ export default function SerialConsole() {
       behavior: "smooth",
     });
   }, [serialData]);
-
-  // 监听串口事件（只读）
-  useEffect(() => {
-    const lr = listen("serial-received", (event) => {
-      setSerialData((prev) => [
-        ...prev,
-        { type: "rx", data: event.payload as string, timestamp: Date.now() },
-      ]);
-    });
-
-    const lt = listen("serial-sent", (event) => {
-      setSerialData((prev) => [
-        ...prev,
-        { type: "tx", data: event.payload as string, timestamp: Date.now() },
-      ]);
-    });
-
-    return () => {
-      lr.then((un) => un());
-      lt.then((un) => un());
-    };
-  }, [setSerialData]);
 
   return (
     <div className="w-full flex flex-col h-full border rounded-lg p-4 gap-3">

@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import React, { JSX, Suspense, useRef } from "react";
 import { pageAtom, PageID } from "@/stores/page.ts";
 import { useAtomValue } from "jotai";
+import { useSerialDebug } from "@/stores/serial.ts";
 
 const SerialConsole = React.lazy(() => import("@/pages/serial-console.tsx"));
 const PidConfig = React.lazy(() => import("@/pages/pid-config.tsx"));
@@ -47,6 +48,7 @@ function PersistentPages({ page }: { page: PageID }) {
 
 function App() {
   const page = useAtomValue(pageAtom);
+  useSerialDebug();
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <SidebarProvider className="h-screen w-screen">
