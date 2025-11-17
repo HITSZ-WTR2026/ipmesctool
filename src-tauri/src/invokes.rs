@@ -1,3 +1,4 @@
+use crate::command::MotorConfigCommand;
 use crate::config_parser::MotorConfig;
 use crate::motor::{Motor, MotorFeedbackState};
 use crate::serial::SerialDevice;
@@ -100,6 +101,42 @@ pub async fn refresh_motor_config(state: tauri::State<'_, AppState>) -> Result<M
     let motor_guard = state.motor.lock().await;
     if let Some(motor) = motor_guard.as_ref() {
         motor.load_config().await.map_err(|e| e.to_string())
+    } else {
+        Err("Motor is not connected".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn config_motor_position_pid(kp: f32, ki: f32, kd: f32, output_max: f32, state: tauri::State<'_, AppState>) -> Result<(), String> {
+    let motor_guard = state.motor.lock().await;
+    if let Some(motor) = motor_guard.as_ref() {
+        motor.send_config_command(
+            &MotorConfigCommand::ConfigPositionPid { kp, ki, kd, output_max },
+        ).await.map_err(|e| e.to_string())
+    } else {
+        Err("Motor is not connected".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn config_motor_speed_pi(kp: f32, ki: f32, output_max: f32, state: tauri::State<'_, AppState>) -> Result<(), String> {
+    let motor_guard = state.motor.lock().await;
+    if let Some(motor) = motor_guard.as_ref() {
+        motor.send_config_command(
+            &MotorConfigCommand::ConfigSpeedPi { kp, ki, output_max },
+        ).await.map_err(|e| e.to_string())
+    } else {
+        Err("Motor is not connected".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn config_motor_current_pi(id_kp: f32, id_ki: f32, iq_kp: f32, iq_ki: f32, state: tauri::State<'_, AppState>) -> Result<(), String> {
+    let motor_guard = state.motor.lock().await;
+    if let Some(motor) = motor_guard.as_ref() {
+        motor.send_config_command(
+            &MotorConfigCommand::ConfigCurrentPi { id_kp, id_ki, iq_kp, iq_ki },
+        ).await.map_err(|e| e.to_string())
     } else {
         Err("Motor is not connected".to_string())
     }

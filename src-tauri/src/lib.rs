@@ -1,4 +1,4 @@
-use crate::invokes::{connect_motor, disconnect_motor, get_motor_config, get_motor_port, get_motor_state, list_serial_ports, refresh_motor_config, set_motor_feedback, AppState};
+use crate::invokes::{config_motor_current_pi, config_motor_position_pid, config_motor_speed_pi, connect_motor, disconnect_motor, get_motor_config, get_motor_port, get_motor_state, list_serial_ports, refresh_motor_config, set_motor_feedback, AppState};
 use log::debug;
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
@@ -59,6 +59,9 @@ pub fn run() {
             get_motor_config,
             refresh_motor_config,
             get_motor_port,
+            config_motor_position_pid,
+            config_motor_speed_pi,
+            config_motor_current_pi
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
