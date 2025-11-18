@@ -61,7 +61,7 @@ pub enum MotorConfigCommand {
     ConfigSpeedPi { kp: f32, ki: f32, output_max: f32 },
     ConfigCurrentPi { id_kp: f32, id_ki: f32, iq_kp: f32, iq_ki: f32 },
     ConfigIdqFilter(f32),
-    ConfigEncoder { pole_pairs: u32, encoder_direct: i32, encoder_offset: f32, encoder_type: String },
+    ConfigEncoder { pole_pairs: u32, encoder_direct: i8, encoder_offset: f32, encoder_type: String },
     ConfigId(u8),
     ConfigUdc(f32),
     Save,
