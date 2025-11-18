@@ -1,6 +1,10 @@
 import { atom } from "jotai";
 
-export type PageID = "Basic.DeviceInfo" | "Motor.PID" | "Debug.Serial";
+export type PageID =
+  | "Basic.DeviceInfo"
+  | "Motor.PID"
+  | "Motor.Encoder"
+  | "Debug.Serial";
 
 export interface PageGroup {
   name: string;
@@ -30,6 +34,10 @@ export const PageGroups: PageGroup[] = [
       {
         id: "Motor.PID",
         name: "PID 设置",
+      },
+      {
+        id: "Motor.Encoder",
+        name: "编码器设置",
       },
     ],
   },
