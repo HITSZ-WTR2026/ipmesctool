@@ -16,6 +16,7 @@ const DeviceInfo = React.lazy(() => import("@/pages/device-info.tsx"));
 export const LazyPages = {
   "Debug.Serial": SerialConsole,
   "Motor.PID": PidConfig,
+  "Motor.Encoder": React.lazy(() => import("@/pages/encoder-config.tsx")),
   "Basic.DeviceInfo": DeviceInfo,
 } as const;
 
