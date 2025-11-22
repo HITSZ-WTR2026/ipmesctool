@@ -51,6 +51,7 @@ function PersistentPages({ page }: { page: PageID }) {
 
 function App() {
   const page = useAtomValue(pageAtom);
+  const locked = useAtomValue(windowLockedAtom);
   const unsaved = useAtomValue(motorConfigUnsavedAtom);
   useSerialDebug();
   return (

@@ -3,7 +3,11 @@ import { cn } from "@/lib/utils.ts";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useAtom, useSetAtom } from "jotai";
-import { motorConfigAtom, motorConnectedAtom } from "@/stores/motor.ts";
+import {
+  motorConfigAtom,
+  motorConnectedAtom,
+  motorStateAtom,
+} from "@/stores/motor.ts";
 import {
   Select,
   SelectContent,
@@ -34,6 +38,7 @@ export default function Device({
   const [connecting, setConnecting] = useState<boolean>(false);
   const [portList, setPortList] = useState<string[]>([]);
   const setMotorConfig = useSetAtom(motorConfigAtom);
+  const setMotorState = useSetAtom(motorStateAtom);
 
   const [selected, setSelected] = useState<string>("");
 
@@ -95,12 +100,14 @@ export default function Device({
     try {
       await invoke("connect_motor", { portName: selected, baudRate: 115200 });
       await getConfigOrDisconnect();
+      // 默认 Stop
+      setMotorState("Stop");
     } catch (e) {
       console.error(e);
       toast.error(`connect error!\n${e}`);
     }
     setConnecting(false);
-  }, [getConfigOrDisconnect, selected]);
+  }, [getConfigOrDisconnect, selected, setMotorState]);
   return (
     <div
       className={cn(
