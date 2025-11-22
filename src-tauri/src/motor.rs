@@ -1,4 +1,5 @@
-use crate::command::{MotorCalibrationCommand, MotorConfigCommand, MotorFeedbackCommand, MotorRunCommand, MotorState};
+use crate::calibration_parser::CalibrationParser;
+use crate::command::{MotorCalibrationCommand, MotorConfigCommand, MotorConfigSave, MotorFeedbackCommand, MotorRunCommand, MotorState};
 use crate::config_parser::{ConfigParser, MotorConfig};
 use crate::error::MotorError;
 use crate::serial::SerialDevice;
@@ -13,7 +14,6 @@ pub use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use tokio::time::{timeout, Duration};
-
 // const MAX_HISTORY: usize = 100000;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,8 +190,41 @@ impl Motor {
             *state = MotorState::Test;
             // 向前端同步状态
             self.app.emit("motor-state-change", MotorState::Test).unwrap();
-            drop(state);
             // TODO: 等待校准完成
+            let mut rx = self.serial.recv_event_tx.subscribe();
+            let duration = Duration::from_secs(120);
+            let mut parser = CalibrationParser::new();
+            let result = timeout(duration, async {
+                while let Ok(line) = rx.recv().await {
+                    match parser.parse(&line) {
+                        Ok(_) => {
+                            self.app.emit("calibration-state", &parser.0).unwrap();
+                            if parser.is_done() {
+                                return Ok(());
+                            }
+                        }
+                        Err(e) => {
+                            return Err(MotorError::CalibrationError(e.to_string()))
+                        }
+                    }
+                }
+                Err(MotorError::SerialError("recv error".into()))
+            }).await;
+            // 校准完成后（不管是成功还是失败）回到停止状态
+            *state = MotorState::Stop;
+            // 向前端同步状态
+            self.app.emit("motor-state-change", MotorState::Stop).unwrap();
+            // 不管是否成功都认为有未保存的数据
+            self.unsaved.store(true, Relaxed);
+            match result {
+                Ok(Ok(_)) => {}
+                Ok(Err(e)) => {
+                    return Err(e);
+                }
+                Err(_) => {
+                    return Err(MotorError::Timeout);
+                }
+            }
             Ok(())
         } else {
             Err(MotorError::InvalidState("cannot calibration in current state".into()))
