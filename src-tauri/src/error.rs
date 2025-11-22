@@ -8,6 +8,8 @@ pub enum MotorError {
     ParseError(String),
     #[error("invalid state: {0}")]
     InvalidState(String),
+    #[error("calibration error: {0}")]
+    CalibrationError(String),
     #[error("fault detected: {0}")]
     FaultDetected(String),
     #[error("timeout")]
