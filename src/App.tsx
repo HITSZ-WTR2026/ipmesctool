@@ -7,8 +7,12 @@ import React, { JSX, Suspense, useRef } from "react";
 import { pageAtom, PageID, windowLockedAtom } from "@/stores/page.ts";
 import { useAtomValue } from "jotai";
 import { useSerialDebug } from "@/stores/serial.ts";
-import { AngleDisplaySwitcher } from "@/components/angle.tsx";
+import {
+  AngleDisplaySwitcher,
+  SpeedDisplaySwitcher,
+} from "@/components/unit.tsx";
 import { motorConfigUnsavedAtom } from "@/stores/motor.ts";
+import DebugRunConsole from "@/components/debug-run-console.tsx";
 
 const SerialConsole = React.lazy(() => import("@/pages/serial-console.tsx"));
 const PidConfig = React.lazy(() => import("@/pages/pid-config.tsx"));
@@ -16,6 +20,7 @@ const DeviceInfo = React.lazy(() => import("@/pages/device-info.tsx"));
 
 export const LazyPages = {
   "Debug.Serial": SerialConsole,
+  "Debug.Chart": React.lazy(() => import("@/pages/chart.tsx")),
   "Motor.PID": PidConfig,
   "Motor.Encoder": React.lazy(() => import("@/pages/encoder-config.tsx")),
   "Motor.Calibration": React.lazy(() => import("@/pages/calibration.tsx")),
@@ -66,12 +71,22 @@ function App() {
           <main className="w-full flex-1 overflow-y-scroll">
             <PersistentPages page={page} />
           </main>
-          <footer className="flex flex-row w-full h-24 bg-accent">
-            <AngleDisplaySwitcher />
-            {unsaved && <span>*配置未写入 Flash</span>}
+          <footer className="flex flex-row w-full h-24 bg-accent gap-4 px-4">
+            <div className="flex flex-col p-1 gap-2 justify-evenly">
+              <AngleDisplaySwitcher />
+              <SpeedDisplaySwitcher />
+            </div>
+            <div className="flex-1 h-full p-1">
+              <DebugRunConsole />
+            </div>
+            <div className="flex flex-col items-end justify-end p-1">
+              {unsaved && (
+                <span className="text-sm text-red-500">*配置未写入 Flash</span>
+              )}
+            </div>
           </footer>
         </div>
-        <Toaster />
+        <Toaster richColors closeButton />
       </SidebarProvider>
     </ThemeProvider>
   );
