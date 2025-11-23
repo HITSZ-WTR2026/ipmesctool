@@ -5,6 +5,7 @@ export type PageID =
   | "Motor.PID"
   | "Motor.Encoder"
   | "Motor.Calibration"
+  | "Debug.Chart"
   | "Debug.Serial";
 
 export interface PageGroup {
@@ -18,6 +19,8 @@ export interface Page {
 }
 
 export const pageAtom = atom<PageID>("Basic.DeviceInfo");
+
+export const windowLockedAtom = atom<boolean>(false);
 
 export const PageGroups: PageGroup[] = [
   {
@@ -49,6 +52,10 @@ export const PageGroups: PageGroup[] = [
   {
     name: "Debug",
     pages: [
+      {
+        name: "波形图",
+        id: "Debug.Chart",
+      },
       {
         name: "串口数据",
         id: "Debug.Serial",
