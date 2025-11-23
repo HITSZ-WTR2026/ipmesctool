@@ -1,0 +1,87 @@
+import { useEffect } from "react";
+import "uplot/dist/uPlot.min.css";
+import {
+  feedbackAtom,
+  MotorFeedbackState,
+  useMotorFeedbackListener,
+} from "@/stores/feedback.ts";
+import { atom, useAtom, useAtomValue } from "jotai";
+import { Button } from "@/components/ui/button.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import { toast } from "sonner";
+import { invoke } from "@tauri-apps/api/core";
+
+const feedbackBtnMap: {
+  label: string;
+  state: MotorFeedbackState;
+}[] = [
+  {
+    label: "无反馈",
+    state: "None",
+  },
+  {
+    label: "速度",
+    state: "Speed",
+  },
+  {
+    label: "位置",
+    state: "Position",
+  },
+  {
+    label: "电流",
+    state: "Current",
+  },
+  {
+    label: "电压",
+    state: "Udc",
+  },
+];
+
+const feedbackStateAtom = atom<MotorFeedbackState>("None");
+
+export default function Chart() {
+  const [state, setState] = useAtom(feedbackStateAtom);
+  const listener = useMotorFeedbackListener();
+  useEffect(() => {
+    const ls = listener();
+    return () => {
+      ls.then((unlisten) => unlisten());
+    };
+  }, [listener]);
+
+  const data = useAtomValue(feedbackAtom);
+
+  return (
+    <div className="w-full h-full flex flex-col items-stretch p-4 gap-2">
+      <div
+        id="chart"
+        className="bg-blend-darken h-1/2 min-h-72 bg-purple-500 rounded-md"
+      >
+        <div className="h-full w-full flex items-center justify-center">
+          波形图！
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 my-4">
+        <Label>设置反馈类型</Label>
+        <div className="w-full flex gap-2">
+          {feedbackBtnMap.map(({ label, state }) => (
+            <Button
+              variant="outline"
+              key={state}
+              onClick={async () => {
+                try {
+                  await invoke("set_motor_feedback", { feedback: state });
+                  setState(state);
+                } catch (e) {
+                  toast.error(`设置反馈类型失败: ${e}`);
+                }
+              }}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
