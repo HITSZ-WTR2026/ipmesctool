@@ -73,8 +73,8 @@ function App() {
           </main>
           <footer className="flex flex-row w-full h-24 bg-accent gap-4 px-4">
             <div className="flex flex-col p-1 gap-2 justify-evenly">
-              <AngleDisplaySwitcher />
               <SpeedDisplaySwitcher />
+              <AngleDisplaySwitcher />
             </div>
             <div className="flex-1 h-full p-1">
               <DebugRunConsole />
